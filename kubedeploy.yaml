@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: Coza-store-Deploy
+  namespace: qa
+  labels:
+    app: Coza-Store-Deploy-lbl
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: Coza-Store-webapp
+  template:
+    metadata:
+      labels:
+        app: Coza-Store-webapp
+    spec:
+      containers:
+      - name: Coza-Store-container
+        image: akshaypatil7485/Coza-Store-webapp
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: Coza-Store-np-service
+  labels:
+    app: Coza-Store-webapp
+spec:
+  selector:
+    app: Coza-Store-Deploy-lbl
+
+  type: NodePort
+  ports:
+  - nodePort: 31028
+    port: 80
+    targetPort: 80
