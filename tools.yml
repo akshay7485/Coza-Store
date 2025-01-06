@@ -1,0 +1,123 @@
+---
+- name: Install Jenkins, Git, and Docker on AWS Instances
+  hosts: all
+  become: yes
+  tasks:
+
+    # Update the system packages
+    - name: Update all packages to the latest version
+      apt:
+        update_cache: yes
+        upgrade: yes
+
+    # Install Java (Jenkins requires Java)
+    - name: Install Java OpenJDK 11
+      apt:
+        name: openjdk-11-jdk
+        state: present
+
+    # Add Jenkins repository and key
+    - name: Add Jenkins repository
+      apt_repository:
+        repo: "deb http://pkg.jenkins.io/debian/ stable main"
+        state: present
+
+    - name: Add Jenkins key
+      apt_key:
+        url: "https://pkg.jenkins.io/debian/jenkins.io.key"
+        state: present
+
+    # Install Jenkins
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+
+    # Start Jenkins service
+    - name: Start Jenkins service
+      service:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    # Install Git
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+
+    # Install Docker
+    - name: Install required dependencies for Docker
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Add Docker's official GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Set up Docker stable repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    # Start Docker service
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    # Add the current user to the Docker group
+    - name: Add user to Docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    # Ensure Docker service is running
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    # Display the status of Jenkins, Git, and Docker
+    - name: Check Jenkins status
+      command: systemctl status jenkins
+      register: jenkins_status
+      ignore_errors: yes
+
+    - name: Check Docker version
+      command: docker --version
+      register: docker_version
+      ignore_errors: yes
+
+    - name: Check Git version
+      command: git --version
+      register: git_version
+      ignore_errors: yes
+
+    # Output installation status
+    - name: Show Jenkins status
+      debug:
+        msg: "{{ jenkins_status.stdout }}"
+
+    - name: Show Docker version
+      debug:
+        msg: "{{ docker_version.stdout }}"
+
+    - name: Show Git version
+      debug:
+        msg: "{{ git_version.stdout }}"
+
